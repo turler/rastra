@@ -45,6 +45,10 @@ gem "bootsnap", require: false
 # Use postgresql db
 gem 'pg'
 
+# Manage ENV from file
+gem 'figaro'
+
+
 # Use Sass to process CSS
 # gem "sassc-rails"
 
