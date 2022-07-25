@@ -48,6 +48,12 @@ gem 'pg'
 # Manage ENV from file
 gem 'figaro'
 
+# data frames for Ruby
+gem 'rover-df'
+
+# Visualization data
+gem 'vega'
+
 
 # Use Sass to process CSS
 # gem "sassc-rails"
