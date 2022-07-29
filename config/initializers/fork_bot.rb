@@ -1,7 +1,7 @@
 # Logic for forking connections
 # The forked process does not have access to static vars as far as I can discern, so I've done some stuff to check if the op threw an exception.
 class ProcessManager
-  def fork_with_new_connection
+  def self.fork_with_new_connection
     # Store the ActiveRecord connection information
     config = ActiveRecord::Base.remove_connection
 
@@ -43,11 +43,11 @@ class ProcessManager
   @@forks = 20
 
   #forks @@forks processes
-  def concurrent_opps iteration
+  def self.concurrent_opps
     (1..@@forks).each do |i|
       pid = fork_with_new_connection do
         # simple way to keep track of progress
-        puts "Fork: #{i}"
+        Rails.logger.info "Fork: #{i}"
 
         #necessary to manage activerecord connections since we are forking
         ActiveRecord::Base.connection.reconnect!
@@ -59,7 +59,7 @@ class ProcessManager
         if 0==x then raise Exception "it was 6, and I don't like 6's" end
       end
       
-      puts "Process #{pid} completed"
+      Rails.logger.info "Process #{pid} completed"
     end
     
     #Wait for all processes to finish before proceeding - collect results as well 
@@ -70,3 +70,5 @@ class ProcessManager
     }
   end
 end
+
+ProcessManager.concurrent_opps 

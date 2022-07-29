@@ -59,6 +59,12 @@ Rails.application.configure do
   # Suppress logger output for asset requests.
   config.assets.quiet = true
 
+  # Enable stdout logger
+  config.logger = Logger.new(STDOUT)
+
+  # Set log level
+  config.log_level = :DEBUG
+
   # Raises error for missing translations.
   # config.i18n.raise_on_missing_translations = true
 
