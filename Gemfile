@@ -50,6 +50,13 @@ gem 'rover-df'
 
 # Visualization data
 gem 'vega'
+gem 'matplotlib'
+
+# Machine learning
+gem 'rumale'
+
+# Data frame
+gem "rover-df"
 
 gem "sidekiq", "~> 6.5"
 

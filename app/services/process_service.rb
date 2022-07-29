@@ -1,6 +1,6 @@
 # Logic for forking connections
 # The forked process does not have access to static vars as far as I can discern, so I've done some stuff to check if the op threw an exception.
-class ProcessManager
+class ProcessService
   def self.fork_with_new_connection
     # Store the ActiveRecord connection information
     config = ActiveRecord::Base.remove_connection
@@ -70,5 +70,3 @@ class ProcessManager
     }
   end
 end
-
-ProcessManager.concurrent_opps 
