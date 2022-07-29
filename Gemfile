@@ -51,6 +51,7 @@ gem 'rover-df'
 # Visualization data
 gem 'vega'
 
+gem "sidekiq", "~> 6.5"
 
 # Use Sass to process CSS
 # gem "sassc-rails"
@@ -80,3 +81,4 @@ group :test do
   gem "selenium-webdriver"
   gem "webdrivers"
 end
+
