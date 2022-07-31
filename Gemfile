@@ -55,10 +55,12 @@ gem 'matplotlib'
 # Machine learning
 gem 'rumale'
 
-# Data frame
-gem "rover-df"
-
+# Background Job
 gem "sidekiq", "~> 6.5"
+
+# Request API
+gem "httpx", "~> 0.20.3"
+
 
 # Use Sass to process CSS
 # gem "sassc-rails"
