@@ -1,13 +1,14 @@
 # Logic for forking connections
 # The forked process does not have access to static vars as far as I can discern, so I've done some stuff to check if the op threw an exception.
 class ProcessService
-  def self.fork_with_new_connection
+  def self.fork_with_new_connection(pid_name = nil)
     # Store the ActiveRecord connection information
     config = ActiveRecord::Base.remove_connection
 
     pid = fork do
       # tracking if the op failed for the Process exit
-      pid_file = PidFile.new(:piddir => 'app/', :pidfile => "sugarboo.pid")
+      pid_name = pid_name || 'sugarboo.pid'
+      pid_file = PidFile.new(piddir: 'app/', :pidfile: pid_name)
       success = true
       begin
         ActiveRecord::Base.establish_connection(config)
@@ -25,7 +26,7 @@ class ProcessService
 
       ensure
         ActiveRecord::Base.remove_connection
-        File.unlink('app/sugarboo.pid') if pid_file.pidfile_exists?
+        File.unlink("app/#{pid_name}") if pid_file.pidfile_exists?
         Process.exit! success
       end
     end
