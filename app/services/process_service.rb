@@ -8,10 +8,9 @@ class ProcessService
     pid = fork do
       # tracking if the op failed for the Process exit
       success = true
-
+      PidFile.new(:piddir => 'app/', :pidfile => "sugarboo.pid")
       begin
         ActiveRecord::Base.establish_connection(config)
-        
         # This is needed to re-initialize the random number generator after forking (if you want diff random numbers generated in the forks)
         srand
 
@@ -26,6 +25,7 @@ class ProcessService
 
       ensure
         ActiveRecord::Base.remove_connection
+        File.unlink('app/sugarboo.pid')
         Process.exit! success
       end
     end
