@@ -1,2 +1,2 @@
 web: bundle exec puma -C config/puma.rb
-worker: bundle exec sidekiq -c $WEB_CONCURRENCY
+worker: bundle exec sidekiq -c 2
