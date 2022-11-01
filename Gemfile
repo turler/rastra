@@ -50,7 +50,6 @@ gem 'rover-df'
 
 # Visualization data
 gem 'vega'
-gem 'matplotlib'
 
 # Machine learning
 gem 'rumale'
