@@ -60,6 +60,9 @@ gem "sidekiq", "~> 6.5"
 # Request API
 gem "httpx", "~> 0.20.3"
 
+# Create PID file
+gem 'pidfile'
+
 
 # Use Sass to process CSS
 # gem "sassc-rails"
