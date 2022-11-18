@@ -63,6 +63,9 @@ gem "httpx", "~> 0.20.3"
 # Create PID file
 gem 'pidfile'
 
+# Socket client
+gem 'websocket-client-simple'
+
 
 # Use Sass to process CSS
 # gem "sassc-rails"
