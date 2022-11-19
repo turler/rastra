@@ -8,7 +8,7 @@ class ProcessService
     pid = fork do
       # tracking if the op failed for the Process exit
       pid_name = pid_name || 'sugarboo.pid'
-      pid_file = PidFile.new(piddir: 'app/', :pidfile: pid_name)
+      pid_file = PidFile.new(piddir: 'app/', pidfile: pid_name)
       success = true
       begin
         ActiveRecord::Base.establish_connection(config)
@@ -20,7 +20,7 @@ class ProcessService
 
       rescue Exception => exception
         puts ("Forked operation failed with exception: " + exception)
-        
+
         # the op failed, so note it for the Process exit
         success = false
 
@@ -36,7 +36,7 @@ class ProcessService
 
     #return the process id
     pid
-  end 
+  end
 
 
   # A static var to keep track of the number of failures
@@ -59,12 +59,12 @@ class ProcessService
         x = rand[25]
         if 0==x then raise Exception "it was 6, and I don't like 6's" end
       end
-      
+
       Rails.logger.info "Process #{pid} completed"
     end
-    
-    #Wait for all processes to finish before proceeding - collect results as well 
-    results = Process.waitall 
+
+    #Wait for all processes to finish before proceeding - collect results as well
+    results = Process.waitall
 
     results.each{ |result|
       @@failed += result[1].exitstatus

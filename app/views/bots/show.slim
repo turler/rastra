@@ -1,0 +1,7 @@
+p
+  | Name: #{@bot.name&.capitalize}
+p
+  | Status: #{@bot.running ? 'Running' : 'Stopped'}
+
+.buttons
+  = link_to 'Start', start_bot_path(@bot)
