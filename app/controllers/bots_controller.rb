@@ -12,7 +12,7 @@ class BotsController < ApplicationController
     ProcessService.fork_with_new_connection(@bot.name) do
       @bot.update(running: true)
 
-      ws = WebSocket::Client::Simple.connect 'wss://fstream.binance.com/ws/bnbusdt@ticker'
+      ws = WebSocket::Client::Simple.connect 'wss://fstream.binance.com/ws/btcusdt@ticker'
       ws.on :message do |msg|
         puts msg
       end
