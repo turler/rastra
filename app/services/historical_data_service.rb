@@ -23,6 +23,24 @@ class HistoricalDataService
         i.to_datetime
       end
     end
+    get_today_historical(pair).concat df
+  end
+
+  def get_today_historical(pair)
+    url = 'https://api.binance.com/api/v1/klines' +'?symbol=' + pair + '&interval=' + '1h' + '&startTime=' + (Date.current.to_datetime.to_i*1000).to_s
+    page = HTTPX.get(url)
+    columns = [:datetime, :open, :high, :low, :close, :volume]
+    data = page.json.map do |i|
+      e = {}
+      columns.each do |name|
+        e[name] = i.shift
+      end
+      e
+    end
+    df = Rover::DataFrame.new data
+    df[:datetime] = df[:datetime].map { |i| Time.at(i/1000).utc }
+    [:open, :high, :low, :close, :volume].each { |i| df[i] = df[i].map(&:to_f) }
     df
   end
+
 end
