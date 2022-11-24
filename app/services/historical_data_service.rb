@@ -1,5 +1,5 @@
 class HistoricalDataService
-  def get_data(pair)
+  def get_data(pair, pair_length = 3)
     File.write "#{pair}.csv", HTTPX.get("https://www.cryptodatadownload.com/cdd/Binance_#{pair}_1h.csv").read
     file = File.open "#{pair}.csv"
     file.gets # read the first line, but ignore it since it contains non-CSV data
@@ -14,7 +14,7 @@ class HistoricalDataService
       'high' => :high,
       'low' => :low,
       'close' => :close,
-      'Volume BTC' => :volume
+      "Volume #{pair[0..pair_length-1]}" => :volume
     )
     df[:datetime] = df[:datetime].map do |i| 
       begin
