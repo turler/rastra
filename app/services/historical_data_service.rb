@@ -27,12 +27,12 @@ class HistoricalDataService
         i.to_datetime
       end
     end
-    df = get_today_historical(pair).concat df
+    df = get_today_historical(pair, df.first[:datetime][0].to_datetime.to_i*1000 + 1).concat df
     df.sort_by! { |r| r[:datetime] }
   end
 
-  def get_today_historical(pair)
-    url = 'https://api.binance.com/api/v1/klines' +'?symbol=' + pair + '&interval=' + '1h' + '&startTime=' + (Date.current.to_datetime.to_i*1000).to_s
+  def get_today_historical(pair, startTime = Date.current.to_datetime.to_i*1000)
+    url = 'https://api.binance.com/api/v1/klines' +'?symbol=' + pair + '&interval=' + '1h' + '&startTime=' + (startTime).to_s
     page = HTTPX.get(url)
     columns = [:datetime, :open, :high, :low, :close, :volume]
     data = page.json.map do |i|
