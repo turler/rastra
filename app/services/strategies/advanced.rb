@@ -1,8 +1,8 @@
 class Strategies::Advanced
   attr_accessor :df, :support, :resist
 
-  def initialize(df)
-    @df = df
+  def initialize(data)
+    @df = data
     df[:candle_size] = df[:high] - df[:low]
     df[:candle_size_ma] = 0.0
     df[:direction] = ''
