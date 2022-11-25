@@ -6,6 +6,10 @@ class HistoricalDataService
     File.write "#{pair}_data.csv", file.read
     file.close
     File.delete "#{pair}.csv"
+    load_data(pair, pair_length)
+  end
+
+  def load_data(pair, pair_length = 3)
     df = Rover.read_csv("#{pair}_data.csv")
     ['unix', 'symbol', 'Volume USDT', 'tradecount'].each { |i| df.delete(i) }
     df.rename(
@@ -23,7 +27,8 @@ class HistoricalDataService
         i.to_datetime
       end
     end
-    get_today_historical(pair).concat df
+    df = get_today_historical(pair).concat df
+    df.sort_by! { |r| r[:datetime] }
   end
 
   def get_today_historical(pair)
