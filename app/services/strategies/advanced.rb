@@ -1,8 +1,10 @@
 class Strategies::Advanced
-  attr_accessor :df, :support, :resist
+  attr_accessor :df, :support, :resist, :pair
 
-  def initialize(data)
-    @df = data
+  def initialize(pair, pair_length)
+    @pair = pair
+    @pair_length = pair_length
+    @df = HistoricalDataService.new.load_data(pair, pair_length)
     df[:candle_size] = df[:high] - df[:low]
     df[:candle_size_ma] = 0.0
     df[:direction] = ''
@@ -11,7 +13,11 @@ class Strategies::Advanced
       df[:candle_size_ma][i] = df[:candle_size][i-24..i].mean
       df[:direction][i] = df[:close][i] > df[:open][i] ? 'bull' : 'bear'
     end
-    df
+    find_or_load_levels
+  end
+
+  def run(ticker_data)
+
   end
 
   def daily_range(part_df)

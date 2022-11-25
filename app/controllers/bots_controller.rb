@@ -9,17 +9,21 @@ class BotsController < ApplicationController
       flash[:alert] = 'Bot is running'
       return redirect_back fallback_location: bot_path(@bot)
     end
+    @bot.update(running: true)
     ProcessService.fork_with_new_connection(@bot.name) do
-      @bot.update(running: true)
-
       ws = WebSocket::Client::Simple.connect 'wss://fstream.binance.com/ws/btcusdt@ticker'
+      count = 0
       ws.on :message do |msg|
-        puts msg
+        ws.close unless @bot.reload.running?
+        puts msg #String need to be parse
+        # run ticker strategy
       end
-      sleep 5
-      ws.close
-      @bot.update(running: false)
     end
+    redirect_back fallback_location: bot_path(@bot)
+  end
+
+  def stop
+    @bot.update(running: false)
     redirect_back fallback_location: bot_path(@bot)
   end
 

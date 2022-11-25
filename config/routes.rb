@@ -9,6 +9,7 @@ Rails.application.routes.draw do
   resources :bots do
     member do
       get 'start'
+      get 'stop'
     end
   end
 end
