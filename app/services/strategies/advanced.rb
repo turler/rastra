@@ -1,7 +1,8 @@
 class Strategies::Advanced
-  attr_accessor :df, :support, :resist, :pair
+  attr_accessor :df, :support, :resist, :pair, :is_handling
 
   def initialize(pair, pair_length = 3)
+    return if pair.blank?
     @pair = pair
     @pair_length = pair_length
     @df = HistoricalDataService.new.load_data(pair, pair_length)
@@ -14,6 +15,12 @@ class Strategies::Advanced
       df[:direction][i] = df[:close][i] > df[:open][i] ? 'bull' : 'bear'
     end
     find_or_load_levels
+  end
+
+  def time_test
+    @is_handling = true
+    sleep 10
+    @is_handling = false
   end
 
   def run(ticker_data)
@@ -43,14 +50,14 @@ class Strategies::Advanced
     volprofile[:volume] = volprofile[:volume].round(6)
     vpoc = volprofile[:volume].max
     volume_nodes = volprofile.sort_by { |i| i[:volume]}.last(5)
-  
+
     volprofile_copy = volprofile.dup
     total_volume = volprofile_copy.sum(:volume)
     value_area_volume = total_volume * 0.68
-  
+
     val = 0
     vah = 0
-  
+
     while value_area_volume >= 0 && volprofile.size > 100
       index_max = volprofile_copy[:volume].to_a.index(vpoc)
       two_above = index_max > 2 ? volprofile_copy[:volume][index_max-1] + volprofile_copy[:volume][index_max-2] : 0
@@ -65,7 +72,7 @@ class Strategies::Advanced
         value_area_volume = value_area_volume - two_below
       end
     end
-    
+
     return [volume_nodes, val, vah, volprofile]
   end
 
@@ -88,7 +95,7 @@ class Strategies::Advanced
       if break_counter == 0 && df[:candle_size][i] >= df[:candle_size_ma][i] * candle_size_mult && \
         (df[:open][i] - df[:close][i]).abs / df[:candle_size][i] * 100 >= 50 && \
         df[:open][i] <= df[:close][i] && df[:open][i] < df[:high][i+1..i+23].min
-    
+
         up_idx = if df[:direction][i] == df[:direction][i-1]
           i - 1 - (df[i-48..i-1][:direction] != df[:direction][i]).to_a.reverse.index(true)
         else
@@ -104,7 +111,7 @@ class Strategies::Advanced
       if up_idx && up_start && up_top > 0 && (up_top - df[:low][i]).abs / (up_top - up_start) > 0.5 && \
         (up_top - up_start) >= daily_range(df[(i-240 > 0 ? i-240 : 0)..i-1]) || \
         up_idx && up_top > 0 && (up_top - up_start).abs >= daily_range_mult * daily_range(df[(i-240 > 0 ? i-240 : 0)..i-1])
-    
+
         price = volume_profile(df[up_idx-24..up_idx])[0][:close].to_a.sort_by {|i| (i-up_start).abs}.first
         @support << {
           'Added' => up_idx,
@@ -118,12 +125,12 @@ class Strategies::Advanced
       if up_start && up_top > 0 && df[:low][i] < up_start
         break_counter, up_top = 0, 0
       end
-    
+
       # Down
       if break_counter == 0 && df[:candle_size][i] >= df[:candle_size_ma][i] * candle_size_mult && \
         (df[:open][i] - df[:close][i]).abs / df[:candle_size][i] * 100 >= 50 && \
         df[:open][i] >= df[:close][i] && df[:open][i] > df[:low][i+1..i+23].max
-    
+
         dwn_idx = if df[:direction][i] == df[:direction][i-1]
           i - 1 - (df[i-48..i-1][:direction] != df[:direction][i]).to_a.reverse.index(true)
         else
@@ -139,7 +146,7 @@ class Strategies::Advanced
       if dwn_idx && dwn_start && dwn_bot > 0 && (dwn_bot - df[:high][i]).abs / (dwn_bot - dwn_start) > 0.5 && \
         (dwn_bot - dwn_start) >= daily_range(df[(i-240 > 0 ? i-240 : 0)..i-1]) || \
         dwn_idx && dwn_bot > 0 && (dwn_bot - dwn_start).abs >= daily_range_mult * daily_range(df[(i-240 > 0 ? i-240 : 0)..i-1])
-    
+
         price = volume_profile(df[dwn_idx-24..dwn_idx])[0][:close].to_a.sort_by {|i| (i-dwn_start).abs}.first
         @resist << {
           'Added' => dwn_idx,
