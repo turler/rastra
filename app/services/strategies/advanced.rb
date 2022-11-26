@@ -1,7 +1,7 @@
 class Strategies::Advanced
   attr_accessor :df, :support, :resist, :pair
 
-  def initialize(pair, pair_length)
+  def initialize(pair, pair_length = 3)
     @pair = pair
     @pair_length = pair_length
     @df = HistoricalDataService.new.load_data(pair, pair_length)
@@ -17,7 +17,11 @@ class Strategies::Advanced
   end
 
   def run(ticker_data)
-
+    data = JSON.parse(ticker_data)
+    data = {
+      datetime: Time.at(data['E']/1000).utc,
+      open: df.last[:close][0]
+    }
   end
 
   def daily_range(part_df)

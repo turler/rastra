@@ -6,10 +6,10 @@ class HistoricalDataService
     File.write "#{pair}_data.csv", file.read
     file.close
     File.delete "#{pair}.csv"
-    load_data(pair, pair_length)
   end
 
   def load_data(pair, pair_length = 3)
+    get_data(pair, pair_length = 3) unless File.exist? "#{pair}_data.csv"
     df = Rover.read_csv("#{pair}_data.csv")
     ['unix', 'symbol', 'Volume USDT', 'tradecount'].each { |i| df.delete(i) }
     df.rename(

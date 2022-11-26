@@ -12,11 +12,11 @@ class BotsController < ApplicationController
     @bot.update(running: true)
     ProcessService.fork_with_new_connection(@bot.name) do
       ws = WebSocket::Client::Simple.connect 'wss://fstream.binance.com/ws/btcusdt@ticker'
-      count = 0
-      ws.on :message do |msg|
+      # should use Continuous Contract Kline/Candlestick Streams instead?
+      stra = Strategies::Advanced.new('BTCUSDT')
+      ws.on :message do |ticker_msg|
         ws.close unless @bot.reload.running?
-        puts msg #String need to be parse
-        # run ticker strategy
+        stra.run(ticker_msg.data)
       end
     end
     redirect_back fallback_location: bot_path(@bot)
