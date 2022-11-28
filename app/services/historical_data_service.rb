@@ -22,12 +22,12 @@ class HistoricalDataService
     )
     df[:datetime] = df[:datetime].map do |i| 
       begin
-        Time.strptime(i + ' utc', '%Y-%m-%d %I-%p %z')
+        Time.strptime(i + ' utc', '%Y-%m-%d %I-%p %z').to_i*1000
       rescue
-        i.to_datetime
+        i.to_datetime.to_i*1000
       end
     end
-    df = get_today_historical(pair, df.first[:datetime][0].to_datetime.to_i*1000 + 1).concat df
+    df = get_today_historical(pair, df.first[:datetime][0] + 1).concat df
     df.sort_by! { |r| r[:datetime] }
   end
 
@@ -43,7 +43,7 @@ class HistoricalDataService
       e
     end
     df = Rover::DataFrame.new data
-    df[:datetime] = df[:datetime].map { |i| Time.at(i/1000).utc }
+    df[:datetime] = df[:datetime].map { |i| i.to_i }
     [:open, :high, :low, :close, :volume].each { |i| df[i] = df[i].map(&:to_f) }
     df
   end

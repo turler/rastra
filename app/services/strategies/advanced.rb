@@ -175,7 +175,7 @@ class Strategies::Advanced
   end
 
   def daily_range(part_df)
-    part_df[:day] = part_df[:datetime].map{|i| i.to_date}
+    part_df[:day] = part_df[:datetime].map{|i| Time.at(i/1000).to_date}
     a = part_df.group(:day).min(:low)
     b = part_df.group(:day).max(:high)
     c = a.left_join(b, on: :day)
@@ -183,8 +183,8 @@ class Strategies::Advanced
     (c['max_high'] - c['min_low']).mean
   end
 
-  def volume_profile(plot = false)
-    _df = df.dup
+  def volume_profile(_df, plot = false)
+    _df = _df.dup
     bucket_size = 0.002 * _df[:close].max
     _df[:close].map!{ |i| ((i/bucket_size).round(0)*bucket_size).round(5)}
     volprofile = _df.group(:close).sum(:volume)
