@@ -19,21 +19,9 @@ class BotsController < ApplicationController
       ws.on :message do |ticker_msg|
         ws.close unless @bot.reload.running?
         return if ticker_handler.present? && ticker_handler.alive?
+        data = JSON.parse(ticker_msg.data)
         ticker_handler = Thread.new do
-          stra.run(ticker_msg.data)
-        end
-        count += 1
-        ws.close if count == 5
-      end
-      ws = WebSocket::Client::Simple.connect 'wss://fstream.binance.com/ws/btcusdt_perpetual@continuousKline_1h'
-      count = 0
-      ticker_handler = nil
-      ws.on :message do |ticker_msg|
-        ws.close unless @bot.reload.running?
-        return if ticker_handler.present? && ticker_handler.alive?
-        puts ticker_msg
-        ticker_handler = Thread.new do
-          sleep 5
+          stra.run(data)
         end
         count += 1
         ws.close if count == 5

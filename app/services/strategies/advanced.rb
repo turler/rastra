@@ -22,13 +22,13 @@ class Strategies::Advanced
     @pair = pair
     @pair_length = pair_length
     @df = HistoricalDataService.new.load_data(pair, pair_length)
-    df[:candle_size] = df[:high] - df[:low]
-    df[:candle_size_ma] = 0.0
-    df[:direction] = ''
+    @df[:candle_size] = @df[:high] - @df[:low]
+    @df[:candle_size_ma] = 0.0
+    @df[:direction] = ''
 
-    (24..df.size-1).each do |i|
-      df[:candle_size_ma][i] = df[:candle_size][i-24..i].mean
-      df[:direction][i] = df[:close][i] > df[:open][i] ? 'bull' : 'bear'
+    (24..@df.size-1).each do |i|
+      @df[:candle_size_ma][i] = @df[:candle_size][i-24..i].mean
+      @df[:direction][i] = @df[:close][i] > @df[:open][i] ? 'bull' : 'bear'
     end
     find_or_load_levels
   end
@@ -39,39 +39,45 @@ class Strategies::Advanced
     @is_handling = false
   end
 
-  def run(ticker_data)
-    data = JSON.parse(ticker_data)
+  def run(data)
     # Calculating data for current price
-    data = [{
-      datetime: Time.at(data['E'].to_i/1000).utc,
+    handle_data = [{
+      datetime: data['k']['t'].to_i,
       open: data['k']['o'].to_f,
       close: data['k']['c'].to_f,
       high: data['k']['h'].to_f,
+      low: data['k']['l'].to_f,
       volume: data['k']['v'].to_f,
     }]
-    last_df = Rover::DataFrame.new data
+    @df = @df[@df[:datetime] != handle_data[0][:datetime]]
+    last_df = Rover::DataFrame.new handle_data
     last_df[:candle_size] = last_df[:high] - last_df[:low]
-    last_df[0][:candle_size_ma] = df.last(23).concat(last_df)[:candle_size].mean
-    df.concat last_df
+    last_df[:candle_size_ma] = df.last(23).concat(last_df)[:candle_size].mean
+    last_df[:direction] = last_df[:close][0] > last_df[:open][0] ? 'bull' : 'bear'
+    puts 'Last DF'
+    puts last_df
+    @df.concat last_df
     # Reset stat and Check if level can be added at this price
     @up_top = 0
     @dwn_bot = 0
     @up_start = @dwn_start = nil
     @up_idx = @dwn_idx = nil
     @break_counter = 0
-    find_level(df.count - 1)
+    puts 'Addition level added count: ' +  find_level(df.count - 1).to_s
     # Check buy/sell signal
     check_signal_trade(df.count - 1)
-    # remove temp last df from df if last df is not actually close kline
-    df = df[df[:datetime] != last_df[:datetime][0]] unless data['k']['x']
   end
 
   def check_signal_trade(i)
+    puts 'Check signal trade at ' + i.to_s
+
     resistance = Rover::DataFrame.new resist
-    support = Rover::DataFrame.new support
+    supports = Rover::DataFrame.new support
 
     #*******************************************Short*******************************************
-    closest_resistance = resistance[(resistance['Added'] <= i - 1) & (resistance['Price'] > df[:high][i-1])].sort_by! { |r| r['Price'] }.first
+    if resistance.present?
+      closest_resistance = resistance[(resistance['Added'] <= i - 1) & (resistance['Price'] > df[:high][i-1])].sort_by! { |r| r['Price'] }.first
+    end
     # Entry
     if open_trades.blank? && !closest_resistance.blank? && df[:high][i-1] < closest_resistance['Price'] && df[:high][i] >= closest_resistance['Price']
       puts "Short trade: #{i} | #{df[i][:datetime][0]} Levels added: #{closest_resistance['Added'][0]}"
@@ -122,7 +128,9 @@ class Strategies::Advanced
       end
     end
     #*******************************************Long*******************************************
-    closest_support = support[(support['Added'] <= i - 1) & (support['Price'] < df[:low][i-1])].sort_by! { |r| r['Price'] }.last
+    if supports.present?
+      closest_support = supports[(supports['Added'] <= i - 1) & (supports['Price'] < df[:low][i-1])].sort_by! { |r| r['Price'] }.last
+    end
     # Entry
     if open_trades.blank? && !closest_support.blank? && df[:low][i-1] > closest_support['Price'] && df[:low][i] <= closest_support['Price']
       puts "Long trade: #{i} Levels added: #{closest_support['Added'][0]}"
@@ -138,7 +146,7 @@ class Strategies::Advanced
     }.transform_keys(&:to_s)
       # Remove level
       if df[:low][i] <= closest_support['Price'] && closest_support['Tested'] == 0
-        support = support[support['Added'] != closest_support['Added'][0]]
+        supports = supports[supports['Added'] != closest_support['Added'][0]]
         closest_support['Tested'] = i
         used_support << closest_support
       end
@@ -236,6 +244,7 @@ class Strategies::Advanced
 
   def find_level(i)
     # Up
+    added_count = 0
     if @break_counter == 0 && df[:candle_size][i] >= df[:candle_size_ma][i] * candle_size_mult && \
       (df[:open][i] - df[:close][i]).abs / df[:candle_size][i] * 100 >= 50 && \
       df[:open][i] <= df[:close][i] && df[:open][i] < df[:high][i+1..i+23].min
@@ -264,6 +273,7 @@ class Strategies::Advanced
         'Type' => 'support',
         'Tested' => 0
       }
+      added_count += 1
       @break_counter, @up_top = 0, 0
     end
     if @up_start && @up_top > 0 && df[:low][i] < @up_start
@@ -300,11 +310,13 @@ class Strategies::Advanced
         'Tested' => 0,
         'DownStart' => @dwn_start
       }
+      added_count += 1
       @break_counter, @dwn_bot = 0, 0
     end
     if @dwn_start && @dwn_bot > 0 && df[:high][i] > @dwn_start
       @break_counter, @dwn_bot = 0, 0
     end
+    added_count
   end
 
 end
