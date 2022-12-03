@@ -1,15 +1,16 @@
-# should use Continuous Contract Kline/Candlestick Streams instead?
 stra = Strategies::Advanced.new('BTCUSDT')
+ticker_handler = nil
 ws = WebSocket::Client::Simple.connect 'wss://fstream.binance.com/ws/btcusdt_perpetual@continuousKline_1h'
-count = 0
-_data = nil
 ws.on :message do |ticker_msg|
-  _data = JSON.parse(ticker_msg.data)
-  ws.close
+  return if ticker_handler&.alive?
+  puts 'Run ticker'
+  data = JSON.parse(ticker_msg.data)
+  puts data
+  puts 'New thread adde'
+  ticker_handler = Thread.new do
+    stra.run(data)
+  end
 end
-stra.run(_data)
-
-
 
 data = 
 {"e"=>"continuous_kline",               

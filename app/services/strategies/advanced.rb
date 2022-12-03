@@ -45,19 +45,11 @@ class Strategies::Advanced
 
   def run(data)
     begin
-      stra_logger.info('Hanling tiker data')
+      stra_logger.info('Handling ticker data')
       # Calculating data for current price
-      handle_data = [{
-        datetime: data['k']['t'].to_i,
-        open: data['k']['o'].to_f,
-        close: data['k']['c'].to_f,
-        high: data['k']['h'].to_f,
-        low: data['k']['l'].to_f,
-        volume: data['k']['v'].to_f,
-      }]
-      stra_logger.info(handle_data.inspect)
-      @df = @df[@df[:datetime] != handle_data[0][:datetime]]
-      last_df = Rover::DataFrame.new handle_data
+      stra_logger.info(data.inspect)
+      @df = @df[@df[:datetime] != data[0][:datetime]]
+      last_df = Rover::DataFrame.new data
       last_df[:candle_size] = last_df[:high] - last_df[:low]
       last_df[:candle_size_ma] = df.last(23).concat(last_df)[:candle_size].mean
       last_df[:direction] = last_df[:close][0] > last_df[:open][0] ? 'bull' : 'bear'
@@ -70,6 +62,7 @@ class Strategies::Advanced
       stra_logger.info("Addition level added count: #{level_added_count} at #{df.count - 1}")
       # Check buy/sell signal
       check_signal_trade(df.count - 1)
+      stra_logger.info('Check signal trade DONE')
       @retry_times = 0
       return @retry_times
     rescue e => message

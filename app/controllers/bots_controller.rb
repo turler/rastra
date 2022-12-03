@@ -11,18 +11,23 @@ class BotsController < ApplicationController
     end
     @bot.update(running: true)
     ProcessService.fork_with_new_connection(@bot.name) do
-      # ws = WebSocket::Client::Simple.connect 'wss://fstream.binance.com/ws/btcusdt@ticker'
-      @ws = WebSocket::Client::Simple.connect 'wss://fstream.binance.com/ws/btcusdt_perpetual@continuousKline_1h'
-      # should use Continuous Contract Kline/Candlestick Streams instead?
       @stra = Strategies::Advanced.new('BTCUSDT')
       ticker_handler = nil
-      @ws.on :message do |ticker_msg|
-        @ws.close if !@bot.reload.running? || @stra.retry_times >= 5
-        return if ticker_handler.present? && ticker_handler.alive?
-        data = JSON.parse(ticker_msg.data)
-        ticker_handler = Thread.new do
-          @stra.run(data)
-        end
+      loop do
+        break if !@bot.reload.running? || @stra.retry_times >= 5
+        url = 'https://fapi.binance.com/fapi/v1/continuousKlines' +'?pair=' + 'BTCUSDT' + '&contractType=' + 'PERPETUAL' + '&interval=' + '1h' + '&startTime=' + (Time.current.beginning_of_hour.to_i*1000).to_s
+        page = HTTPX.get(url)
+        data = page.json.first
+        handle_data = [{
+          datetime: data[0],
+          open: data[1].to_f,
+          high: data[2].to_f,
+          low: data[3].to_f,
+          close: data[4].to_f,
+          volume: data[5].to_f,
+        }]
+        @stra.run(handle_data)
+        sleep(0.2)
       end
     end
     redirect_back fallback_location: bot_path(@bot)
