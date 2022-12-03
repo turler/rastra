@@ -23,8 +23,6 @@ class BotsController < ApplicationController
         ticker_handler = Thread.new do
           stra.run(data)
         end
-        count += 1
-        ws.close if count == 5
       end
     end
     redirect_back fallback_location: bot_path(@bot)
