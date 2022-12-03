@@ -46,36 +46,40 @@ class Strategies::Advanced
   end
 
   def run(data)
-    stra_logger.info('Hanling tiker data')
-    # Calculating data for current price
-    handle_data = [{
-      datetime: data['k']['t'].to_i,
-      open: data['k']['o'].to_f,
-      close: data['k']['c'].to_f,
-      high: data['k']['h'].to_f,
-      low: data['k']['l'].to_f,
-      volume: data['k']['v'].to_f,
-    }]
-    stra_logger.info(handle_data.inspect)
-    @df = @df[@df[:datetime] != handle_data[0][:datetime]]
-    last_df = Rover::DataFrame.new handle_data
-    last_df[:candle_size] = last_df[:high] - last_df[:low]
-    last_df[:candle_size_ma] = df.last(23).concat(last_df)[:candle_size].mean
-    last_df[:direction] = last_df[:close][0] > last_df[:open][0] ? 'bull' : 'bear'
-    puts 'Last DF'
-    puts last_df
-    stra_logger.info("Latest DF: #{last_df}")
-    @df.concat last_df
-    level_added_count = find_level(df.count - 1)
-    puts 'Addition level added count: ' +  level_added_count.to_s
-    stra_logger.info("Addition level added count: #{level_added_count} at #{df.count - 1}")
-    # Check buy/sell signal
-    check_signal_trade(df.count - 1)
+    begin
+      @@stra_logger.info('Hanling tiker data')
+      # Calculating data for current price
+      handle_data = [{
+        datetime: data['k']['t'].to_i,
+        open: data['k']['o'].to_f,
+        close: data['k']['c'].to_f,
+        high: data['k']['h'].to_f,
+        low: data['k']['l'].to_f,
+        volume: data['k']['v'].to_f,
+      }]
+      @@stra_logger.info(handle_data.inspect)
+      @df = @df[@df[:datetime] != handle_data[0][:datetime]]
+      last_df = Rover::DataFrame.new handle_data
+      last_df[:candle_size] = last_df[:high] - last_df[:low]
+      last_df[:candle_size_ma] = df.last(23).concat(last_df)[:candle_size].mean
+      last_df[:direction] = last_df[:close][0] > last_df[:open][0] ? 'bull' : 'bear'
+      puts 'Last DF'
+      puts last_df
+      @@stra_logger.info("Latest DF: #{last_df}")
+      @df.concat last_df
+      level_added_count = find_level(df.count - 1)
+      puts 'Addition level added count: ' +  level_added_count.to_s
+      @@stra_logger.info("Addition level added count: #{level_added_count} at #{df.count - 1}")
+      # Check buy/sell signal
+      check_signal_trade(df.count - 1)
+    rescue e => message
+      @@stra_logger.info(message)
+    end
   end
 
   def check_signal_trade(i)
     puts 'Check signal trade at ' + i.to_s
-    stra_logger.info("Check signal trade at #{i}")
+    @@stra_logger.info("Check signal trade at #{i}")
 
     resistance = Rover::DataFrame.new resist
     supports = Rover::DataFrame.new support
@@ -97,13 +101,13 @@ class Strategies::Advanced
         'TP': closest_resistance['Price'][0] - (rr_coef * closest_resistance['SL'][0]),
         'SL': closest_resistance['Price'][0] + closest_resistance['SL'][0]
       }.transform_keys(&:to_s)
-      stra_logger.info("Open short trade: #{open_trades.last.inspect}")
+      @@stra_logger.info("Open short trade: #{open_trades.last.inspect}")
       # Remove level
       if df[:high][i] >= closest_resistance['Price'][0] && closest_resistance['Tested'][0] == 0
         resistance = resistance[resistance['Added'] != closest_resistance['Added'][0]]
         closest_resistance['Tested'][0] = i
         used_resistance << closest_resistance
-        stra_logger.info("Move tested resistance level to used: #{closest_resistance.to_s}")
+        @@stra_logger.info("Move tested resistance level to used: #{closest_resistance.to_s}")
       end
     end
 
@@ -119,7 +123,7 @@ class Strategies::Advanced
           closed_losses << current_trade
           open_trades.delete(current_trade)
           puts "SL #{i} -with result: #{current_trade['result'].round(1)}"
-          stra_logger.info("Stop loss sell position trigger: #{current_trade.inspect}")
+          @@stra_logger.info("Stop loss sell position trigger: #{current_trade.inspect}")
           # Draw
           return
         end
@@ -131,7 +135,7 @@ class Strategies::Advanced
           closed_profits << current_trade
           open_trades.delete(current_trade)
           puts "TP #{i} -with result: #{current_trade['result'].round(1)}"
-          stra_logger.info("Take profit sell position trigger: #{current_trade.inspect}")
+          @@stra_logger.info("Take profit sell position trigger: #{current_trade.inspect}")
           # Draw
           return
         end
@@ -154,13 +158,13 @@ class Strategies::Advanced
         'TP': closest_support['Price'][0] + (rr_coef * closest_support['SL'][0]),
         'SL': closest_support['Price'][0] - closest_support['SL'][0]
       }.transform_keys(&:to_s)
-      stra_logger.info("Open long trade: #{open_trades.last.inspect}")
+      @@stra_logger.info("Open long trade: #{open_trades.last.inspect}")
       # Remove level
       if df[:low][i] <= closest_support['Price'][0] && closest_support['Tested'][0] == 0
         supports = supports[supports['Added'] != closest_support['Added'][0]]
         closest_support['Tested'][0] = i
         used_support << closest_support
-        stra_logger.info("Move tested support level to used: #{closest_support.to_s}")
+        @@stra_logger.info("Move tested support level to used: #{closest_support.to_s}")
       end
     end
 
@@ -176,7 +180,7 @@ class Strategies::Advanced
           closed_losses << current_trade
           open_trades.delete(current_trade)
           puts "SL #{i} -with result: #{current_trade['result'].round(1)}"
-          stra_logger.info("Stop loss long position trigger: #{current_trade.inspect}")
+          @@stra_logger.info("Stop loss long position trigger: #{current_trade.inspect}")
           # Draw
           return
         end
@@ -188,7 +192,7 @@ class Strategies::Advanced
           closed_profits << current_trade
           open_trades.delete(current_trade)
           puts "TP #{i} -with result: #{current_trade['result'].round(1)}"
-          stra_logger.info("Take profit long position trigger: #{current_trade.inspect}")
+          @@stra_logger.info("Take profit long position trigger: #{current_trade.inspect}")
           # Draw
           return
         end
@@ -288,7 +292,7 @@ class Strategies::Advanced
         'Type' => 'support',
         'Tested' => 0
       }
-      stra_logger.info("Support added: #{@support.last.inspect}")
+      @@stra_logger.info("Support added: #{@support.last.inspect}")
       added_count += 1
       @break_counter, @up_top = 0, 0
     end
@@ -327,7 +331,7 @@ class Strategies::Advanced
         'Tested' => 0,
         'DownStart' => @dwn_start
       }
-      stra_logger.info("Resist added: #{@resist.last.inspect}")
+      @@stra_logger.info("Resist added: #{@resist.last.inspect}")
       added_count += 1
       @break_counter, @dwn_bot = 0, 0
     end
