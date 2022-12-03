@@ -1,7 +1,7 @@
 class Strategies::Advanced
   attr_accessor :df, :support, :resist, :pair, :is_handling, :used_support, :used_resistance
   attr_accessor :open_trades, :closed_profits, :closed_losses, :capital, :slippage, :rr_coef
-  attr_accessor :candle_size_mult, :daily_range_mult
+  attr_accessor :candle_size_mult, :daily_range_mult, :retry_times
 
   def initialize(pair, pair_length = 3)
     @@stra_logger ||= Logger.new("#{Rails.root}/log/advanced_stra.log")
@@ -9,6 +9,8 @@ class Strategies::Advanced
     @@stra_logger.info("Initialize strategy advanced")
 
     return if pair.blank?
+
+    @retry_times = 0
 
     @candle_size_mult = 3
     @daily_range_mult = 3
@@ -72,8 +74,13 @@ class Strategies::Advanced
       @@stra_logger.info("Addition level added count: #{level_added_count} at #{df.count - 1}")
       # Check buy/sell signal
       check_signal_trade(df.count - 1)
+      @retry_times = 0
+      return @retry_times
     rescue e => message
+      @@stra_logger.info('Handle ticker data with error')
       @@stra_logger.info(message)
+      @retry_times += 1
+      return @retry_times
     end
   end
 

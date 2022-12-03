@@ -17,7 +17,7 @@ class BotsController < ApplicationController
       stra = Strategies::Advanced.new('BTCUSDT')
       ticker_handler = nil
       ws.on :message do |ticker_msg|
-        ws.close unless @bot.reload.running?
+        ws.close if !@bot.reload.running? || stra.retry_times >= 5
         return if ticker_handler.present? && ticker_handler.alive?
         data = JSON.parse(ticker_msg.data)
         ticker_handler = Thread.new do
