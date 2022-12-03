@@ -57,12 +57,6 @@ class Strategies::Advanced
     puts 'Last DF'
     puts last_df
     @df.concat last_df
-    # Reset stat and Check if level can be added at this price
-    @up_top = 0
-    @dwn_bot = 0
-    @up_start = @dwn_start = nil
-    @up_idx = @dwn_idx = nil
-    @break_counter = 0
     puts 'Addition level added count: ' +  find_level(df.count - 1).to_s
     # Check buy/sell signal
     check_signal_trade(df.count - 1)
@@ -79,7 +73,7 @@ class Strategies::Advanced
       closest_resistance = resistance[(resistance['Added'] <= i - 1) & (resistance['Price'] > df[:high][i-1])].sort_by! { |r| r['Price'] }.first
     end
     # Entry
-    if open_trades.blank? && !closest_resistance.blank? && df[:high][i-1] < closest_resistance['Price'] && df[:high][i] >= closest_resistance['Price']
+    if open_trades.blank? && !closest_resistance.blank? && df[:high][i-1] < closest_resistance['Price'][0] && df[:high][i] >= closest_resistance['Price'][0]
       puts "Short trade: #{i} | #{df[i][:datetime][0]} Levels added: #{closest_resistance['Added'][0]}"
       open_trades << {
         'price': closest_resistance['Price'][0] - (df[:candle_size][i] * slippage),
@@ -92,9 +86,9 @@ class Strategies::Advanced
         'SL': closest_resistance['Price'][0] + closest_resistance['SL'][0]
       }.transform_keys(&:to_s)
       # Remove level
-      if df[:high][i] >= closest_resistance['Price'] && closest_resistance['Tested'] == 0
+      if df[:high][i] >= closest_resistance['Price'][0] && closest_resistance['Tested'][0] == 0
         resistance = resistance[resistance['Added'] != closest_resistance['Added'][0]]
-        closest_resistance['Tested'] = i
+        closest_resistance['Tested'][0] = i
         used_resistance << closest_resistance
       end
     end
@@ -132,7 +126,7 @@ class Strategies::Advanced
       closest_support = supports[(supports['Added'] <= i - 1) & (supports['Price'] < df[:low][i-1])].sort_by! { |r| r['Price'] }.last
     end
     # Entry
-    if open_trades.blank? && !closest_support.blank? && df[:low][i-1] > closest_support['Price'] && df[:low][i] <= closest_support['Price']
+    if open_trades.blank? && !closest_support.blank? && df[:low][i-1] > closest_support['Price'][0] && df[:low][i] <= closest_support['Price'][0]
       puts "Long trade: #{i} Levels added: #{closest_support['Added'][0]}"
       open_trades << {
         'price': closest_support['Price'][0] + (df[:candle_size][i] * slippage),
@@ -145,9 +139,9 @@ class Strategies::Advanced
         'SL': closest_support['Price'][0] - closest_support['SL'][0]
     }.transform_keys(&:to_s)
       # Remove level
-      if df[:low][i] <= closest_support['Price'] && closest_support['Tested'] == 0
+      if df[:low][i] <= closest_support['Price'][0] && closest_support['Tested'][0] == 0
         supports = supports[supports['Added'] != closest_support['Added'][0]]
-        closest_support['Tested'] = i
+        closest_support['Tested'][0] = i
         used_support << closest_support
       end
     end
@@ -268,6 +262,7 @@ class Strategies::Advanced
       price = volume_profile(df[@up_idx-24..@up_idx])[0][:close].to_a.sort_by {|i| (i-@up_start).abs}.first
       @support << {
         'Added' => @up_idx,
+        'i' => i,
         'Price' => price,
         'SL' => (price - df[@up_idx-24..@up_idx][:low].min).abs,
         'Type' => 'support',
@@ -304,6 +299,7 @@ class Strategies::Advanced
       price = volume_profile(df[@dwn_idx-24..@dwn_idx])[0][:close].to_a.sort_by {|i| (i-@dwn_start).abs}.first
       @resist << {
         'Added' => @dwn_idx,
+        'i' => i,
         'Price' => price,
         'SL' => (price - df[@dwn_idx-24..@dwn_idx][:high].max).abs,
         'Type' => 'resist',
