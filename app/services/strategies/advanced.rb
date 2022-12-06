@@ -43,6 +43,10 @@ class Strategies::Advanced
     @@stra_logger ||= Logger.new("#{Rails.root}/log/advanced_stra.log")
   end
 
+  def trade_logger
+    @@trade_logger ||= Logger.new("#{Rails.root}/log/trades_stra.log")
+  end
+
   def run(data)
     begin
       stra_logger.info('Handling ticker data')
@@ -98,6 +102,7 @@ class Strategies::Advanced
         'SL': closest_resistance['Price'][0] + closest_resistance['SL'][0]
       }.transform_keys(&:to_s)
       stra_logger.info("Open short trade: #{open_trades.last.inspect}")
+      trade_logger.info("Open short trade: #{open_trades.last.inspect}")
       # Remove level
       if df[:high][i] >= closest_resistance['Price'][0] && closest_resistance['Tested'][0] == 0
         resistance = resistance[resistance['Added'] != closest_resistance['Added'][0]]
@@ -120,6 +125,7 @@ class Strategies::Advanced
           open_trades.delete(current_trade)
           puts "SL #{i} -with result: #{current_trade['result'].round(1)}"
           stra_logger.info("Stop loss sell position trigger: #{current_trade.inspect}")
+          trade_logger.info("Stop loss sell position trigger: #{current_trade.inspect}")
           # Draw
           return
         end
@@ -132,6 +138,7 @@ class Strategies::Advanced
           open_trades.delete(current_trade)
           puts "TP #{i} -with result: #{current_trade['result'].round(1)}"
           stra_logger.info("Take profit sell position trigger: #{current_trade.inspect}")
+          trade_logger.info("Take profit sell position trigger: #{current_trade.inspect}")
           # Draw
           return
         end
@@ -155,6 +162,7 @@ class Strategies::Advanced
         'SL': closest_support['Price'][0] - closest_support['SL'][0]
       }.transform_keys(&:to_s)
       stra_logger.info("Open long trade: #{open_trades.last.inspect}")
+      trade_logger.info("Open long trade: #{open_trades.last.inspect}")
       # Remove level
       if df[:low][i] <= closest_support['Price'][0] && closest_support['Tested'][0] == 0
         supports = supports[supports['Added'] != closest_support['Added'][0]]
@@ -177,6 +185,7 @@ class Strategies::Advanced
           open_trades.delete(current_trade)
           puts "SL #{i} -with result: #{current_trade['result'].round(1)}"
           stra_logger.info("Stop loss long position trigger: #{current_trade.inspect}")
+          trade_logger.info("Stop loss long position trigger: #{current_trade.inspect}")
           # Draw
           return
         end
@@ -189,6 +198,7 @@ class Strategies::Advanced
           open_trades.delete(current_trade)
           puts "TP #{i} -with result: #{current_trade['result'].round(1)}"
           stra_logger.info("Take profit long position trigger: #{current_trade.inspect}")
+          trade_logger.info("Take profit long position trigger: #{current_trade.inspect}")
           # Draw
           return
         end
