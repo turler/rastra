@@ -77,16 +77,17 @@ class Strategies::Advanced
     end
   end
 
+  def backtest
+
+  end
+
   def check_signal_trade(i)
     puts 'Check signal trade at ' + i.to_s
     stra_logger.info("Check signal trade at #{i}")
 
-    resistance = Rover::DataFrame.new resist
-    supports = Rover::DataFrame.new support
-
     #*******************************************Short*******************************************
-    if resistance.present?
-      closest_resistance = resistance[(resistance['Added'] <= i - 1) & (resistance['Price'] > df[:high][i-1])].sort_by! { |r| r['Price'] }.first
+    if resist.present?
+      closest_resistance = resist[(resist['Added'] <= i - 1) & (resist['Price'] > df[:high][i-1])].sort_by! { |r| r['Price'] }.first
     end
     # Entry
     if open_trades.blank? && !closest_resistance.blank? && df[:high][i-1] < closest_resistance['Price'][0] && df[:high][i] >= closest_resistance['Price'][0]
@@ -105,10 +106,10 @@ class Strategies::Advanced
       trade_logger.info("Open short trade: #{open_trades.last.inspect}")
       # Remove level
       if df[:high][i] >= closest_resistance['Price'][0] && closest_resistance['Tested'][0] == 0
-        resistance = resistance[resistance['Added'] != closest_resistance['Added'][0]]
+        resist = resist[resist['Added'] != closest_resistance['Added'][0]]
         closest_resistance['Tested'][0] = i
         used_resistance << closest_resistance
-        stra_logger.info("Move tested resistance level to used: #{closest_resistance.to_s}")
+        stra_logger.info("Move tested resist level to used: #{closest_resistance.to_s}")
       end
     end
 
@@ -145,8 +146,8 @@ class Strategies::Advanced
       end
     end
     #*******************************************Long*******************************************
-    if supports.present?
-      closest_support = supports[(supports['Added'] <= i - 1) & (supports['Price'] < df[:low][i-1])].sort_by! { |r| r['Price'] }.last
+    if support.present?
+      closest_support = support[(support['Added'] <= i - 1) & (support['Price'] < df[:low][i-1])].sort_by! { |r| r['Price'] }.last
     end
     # Entry
     if open_trades.blank? && !closest_support.blank? && df[:low][i-1] > closest_support['Price'][0] && df[:low][i] <= closest_support['Price'][0]
@@ -165,7 +166,7 @@ class Strategies::Advanced
       trade_logger.info("Open long trade: #{open_trades.last.inspect}")
       # Remove level
       if df[:low][i] <= closest_support['Price'][0] && closest_support['Tested'][0] == 0
-        supports = supports[supports['Added'] != closest_support['Added'][0]]
+        support = support[support['Added'] != closest_support['Added'][0]]
         closest_support['Tested'][0] = i
         used_support << closest_support
         stra_logger.info("Move tested support level to used: #{closest_support.to_s}")
@@ -258,8 +259,8 @@ class Strategies::Advanced
     @up_idx = @dwn_idx = nil
     @break_counter = 0
 
-    @support = []
-    @resist = []
+    @support = Rover::DataFrame.new
+    @resist = Rover::DataFrame.new
 
     (50..df.count-25).each do |i|
       find_level(i)
@@ -290,14 +291,14 @@ class Strategies::Advanced
       @up_idx && @up_top > 0 && (@up_top - @up_start).abs >= daily_range_mult * daily_range(df[(i-240 > 0 ? i-240 : 0)..i-1])
 
       price = volume_profile(df[@up_idx-24..@up_idx])[0][:close].to_a.sort_by {|i| (i-@up_start).abs}.first
-      @support << {
+      @support.concat Rover::DataFrame.new([{
         'Added' => @up_idx,
         'i' => i,
         'Price' => price,
         'SL' => (price - df[@up_idx-24..@up_idx][:low].min).abs,
         'Type' => 'support',
         'Tested' => 0
-      }
+      }])
       stra_logger.info("Support added: #{@support.last.inspect}")
       added_count += 1
       @break_counter, @up_top = 0, 0
@@ -328,7 +329,7 @@ class Strategies::Advanced
       @dwn_idx && @dwn_bot > 0 && (@dwn_bot - @dwn_start).abs >= daily_range_mult * daily_range(df[(i-240 > 0 ? i-240 : 0)..i-1])
 
       price = volume_profile(df[@dwn_idx-24..@dwn_idx])[0][:close].to_a.sort_by {|i| (i-@dwn_start).abs}.first
-      @resist << {
+      @resist.concat Rover::DataFrame.new({
         'Added' => @dwn_idx,
         'i' => i,
         'Price' => price,
@@ -336,7 +337,7 @@ class Strategies::Advanced
         'Type' => 'resist',
         'Tested' => 0,
         'DownStart' => @dwn_start
-      }
+      }])
       stra_logger.info("Resist added: #{@resist.last.inspect}")
       added_count += 1
       @break_counter, @dwn_bot = 0, 0
