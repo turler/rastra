@@ -78,7 +78,9 @@ class Strategies::Advanced
   end
 
   def backtest
-
+    (50..@df.count-25).each do |i|
+      check_signal_trade(i)
+    end
   end
 
   def check_signal_trade(i)
@@ -90,9 +92,9 @@ class Strategies::Advanced
       closest_resistance = @resist[(@resist['Added'] <= i - 1) & (@resist['Price'] > df[:high][i-1])].sort_by! { |r| r['Price'] }.first
     end
     # Entry
-    if open_trades.blank? && !closest_resistance.blank? && df[:high][i-1] < closest_resistance['Price'][0] && df[:high][i] >= closest_resistance['Price'][0]
+    if @open_trades.blank? && !closest_resistance.blank? && df[:high][i-1] < closest_resistance['Price'][0] && df[:high][i] >= closest_resistance['Price'][0]
       puts "Short trade: #{i} | #{df[i][:datetime][0]} Levels added: #{closest_resistance['Added'][0]}"
-      open_trades << {
+      @open_trades << {
         'price': closest_resistance['Price'][0] - (df[:candle_size][i] * slippage),
         'level_added': closest_resistance['Added'][0],
         'trade_open': i,
@@ -102,8 +104,8 @@ class Strategies::Advanced
         'TP': closest_resistance['Price'][0] - (rr_coef * closest_resistance['SL'][0]),
         'SL': closest_resistance['Price'][0] + closest_resistance['SL'][0]
       }.transform_keys(&:to_s)
-      stra_logger.info("Open short trade: #{open_trades.last.inspect}")
-      trade_logger.info("Open short trade: #{open_trades.last.inspect}")
+      stra_logger.info("Open short trade: #{@open_trades.last.inspect}")
+      trade_logger.info("Open short trade: #{@open_trades.last.inspect}")
       # Remove level
       if df[:high][i] >= closest_resistance['Price'][0] && closest_resistance['Tested'][0] == 0
         @resist = @resist[@resist['Added'] != closest_resistance['Added'][0]]
@@ -114,16 +116,16 @@ class Strategies::Advanced
     end
 
     # Manage trades
-    if open_trades.size > 0
-      current_trade = open_trades[-1]
+    if @open_trades.size > 0
+      current_trade = @open_trades[-1]
       if current_trade['direction'] == 'Sell'
         # SL
         if df[:high][i] >= current_trade['SL']
           current_trade['result'] = (current_trade['price'] - current_trade['SL']) * (capital / df[:close][i])
           current_trade['trade_close'] = i
 
-          closed_losses << current_trade
-          open_trades.delete(current_trade)
+          @closed_losses << current_trade
+          @open_trades.delete(current_trade)
           puts "SL #{i} -with result: #{current_trade['result'].round(1)}"
           stra_logger.info("Stop loss sell position trigger: #{current_trade.inspect}")
           trade_logger.info("Stop loss sell position trigger: #{current_trade.inspect}")
@@ -135,8 +137,8 @@ class Strategies::Advanced
           current_trade['result'] = (current_trade['price'] - current_trade['TP']) * (capital / df[:close][i])
           current_trade['trade_close'] = i
 
-          closed_profits << current_trade
-          open_trades.delete(current_trade)
+          @closed_profits << current_trade
+          @open_trades.delete(current_trade)
           puts "TP #{i} -with result: #{current_trade['result'].round(1)}"
           stra_logger.info("Take profit sell position trigger: #{current_trade.inspect}")
           trade_logger.info("Take profit sell position trigger: #{current_trade.inspect}")
@@ -150,9 +152,9 @@ class Strategies::Advanced
       closest_support = @support[(@support['Added'] <= i - 1) & (@support['Price'] < df[:low][i-1])].sort_by! { |r| r['Price'] }.last
     end
     # Entry
-    if open_trades.blank? && !closest_support.blank? && df[:low][i-1] > closest_support['Price'][0] && df[:low][i] <= closest_support['Price'][0]
+    if @open_trades.blank? && !closest_support.blank? && df[:low][i-1] > closest_support['Price'][0] && df[:low][i] <= closest_support['Price'][0]
       puts "Long trade: #{i} Levels added: #{closest_support['Added'][0]}"
-      open_trades << {
+      @open_trades << {
         'price': closest_support['Price'][0] + (df[:candle_size][i] * slippage),
         'level_added': closest_support['Added'][0],
         'trade_open': i,
@@ -162,8 +164,8 @@ class Strategies::Advanced
         'TP': closest_support['Price'][0] + (rr_coef * closest_support['SL'][0]),
         'SL': closest_support['Price'][0] - closest_support['SL'][0]
       }.transform_keys(&:to_s)
-      stra_logger.info("Open long trade: #{open_trades.last.inspect}")
-      trade_logger.info("Open long trade: #{open_trades.last.inspect}")
+      stra_logger.info("Open long trade: #{@open_trades.last.inspect}")
+      trade_logger.info("Open long trade: #{@open_trades.last.inspect}")
       # Remove level
       if df[:low][i] <= closest_support['Price'][0] && closest_support['Tested'][0] == 0
         @support = @support[@support['Added'] != closest_support['Added'][0]]
@@ -174,16 +176,16 @@ class Strategies::Advanced
     end
 
     # Manage trades
-    if open_trades.size > 0
-      current_trade = open_trades[-1]
+    if @open_trades.size > 0
+      current_trade = @open_trades[-1]
       if current_trade['direction'] == 'Buy'
         # SL
         if df[:low][i] <= current_trade['SL']
           current_trade['result'] = (current_trade['SL'] - current_trade['price']) * (capital / df[:close][i])
           current_trade['trade_close'] = i
 
-          closed_losses << current_trade
-          open_trades.delete(current_trade)
+          @closed_losses << current_trade
+          @open_trades.delete(current_trade)
           puts "SL #{i} -with result: #{current_trade['result'].round(1)}"
           stra_logger.info("Stop loss long position trigger: #{current_trade.inspect}")
           trade_logger.info("Stop loss long position trigger: #{current_trade.inspect}")
@@ -195,8 +197,8 @@ class Strategies::Advanced
           current_trade['result'] = (current_trade['TP'] - current_trade['price']) * (capital / df[:close][i])
           current_trade['trade_close'] = i
 
-          closed_profits << current_trade
-          open_trades.delete(current_trade)
+          @closed_profits << current_trade
+          @open_trades.delete(current_trade)
           puts "TP #{i} -with result: #{current_trade['result'].round(1)}"
           stra_logger.info("Take profit long position trigger: #{current_trade.inspect}")
           trade_logger.info("Take profit long position trigger: #{current_trade.inspect}")
