@@ -331,7 +331,7 @@ class Strategies::Advanced
       @dwn_idx && @dwn_bot > 0 && (@dwn_bot - @dwn_start).abs >= daily_range_mult * daily_range(df[(i-240 > 0 ? i-240 : 0)..i-1])
 
       price = volume_profile(df[@dwn_idx-24..@dwn_idx])[0][:close].to_a.sort_by {|i| (i-@dwn_start).abs}.first
-      @resist.concat Rover::DataFrame.new({
+      @resist.concat Rover::DataFrame.new([{
         'Added' => @dwn_idx,
         'i' => i,
         'Price' => price,
