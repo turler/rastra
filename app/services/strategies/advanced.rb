@@ -86,8 +86,8 @@ class Strategies::Advanced
     stra_logger.info("Check signal trade at #{i}")
 
     #*******************************************Short*******************************************
-    if resist.present?
-      closest_resistance = resist[(resist['Added'] <= i - 1) & (resist['Price'] > df[:high][i-1])].sort_by! { |r| r['Price'] }.first
+    if @resist.present?
+      closest_resistance = @resist[(@resist['Added'] <= i - 1) & (@resist['Price'] > df[:high][i-1])].sort_by! { |r| r['Price'] }.first
     end
     # Entry
     if open_trades.blank? && !closest_resistance.blank? && df[:high][i-1] < closest_resistance['Price'][0] && df[:high][i] >= closest_resistance['Price'][0]
@@ -106,10 +106,10 @@ class Strategies::Advanced
       trade_logger.info("Open short trade: #{open_trades.last.inspect}")
       # Remove level
       if df[:high][i] >= closest_resistance['Price'][0] && closest_resistance['Tested'][0] == 0
-        resist = resist[resist['Added'] != closest_resistance['Added'][0]]
+        @resist = @resist[@resist['Added'] != closest_resistance['Added'][0]]
         closest_resistance['Tested'][0] = i
-        used_resistance << closest_resistance
-        stra_logger.info("Move tested resist level to used: #{closest_resistance.to_s}")
+        @used_resistance << closest_resistance
+        stra_logger.info("Move tested @resist level to used: #{closest_resistance.to_s}")
       end
     end
 
@@ -146,8 +146,8 @@ class Strategies::Advanced
       end
     end
     #*******************************************Long*******************************************
-    if support.present?
-      closest_support = support[(support['Added'] <= i - 1) & (support['Price'] < df[:low][i-1])].sort_by! { |r| r['Price'] }.last
+    if @support.present?
+      closest_support = @support[(@support['Added'] <= i - 1) & (@support['Price'] < df[:low][i-1])].sort_by! { |r| r['Price'] }.last
     end
     # Entry
     if open_trades.blank? && !closest_support.blank? && df[:low][i-1] > closest_support['Price'][0] && df[:low][i] <= closest_support['Price'][0]
@@ -166,10 +166,10 @@ class Strategies::Advanced
       trade_logger.info("Open long trade: #{open_trades.last.inspect}")
       # Remove level
       if df[:low][i] <= closest_support['Price'][0] && closest_support['Tested'][0] == 0
-        support = support[support['Added'] != closest_support['Added'][0]]
+        @support = @support[@support['Added'] != closest_support['Added'][0]]
         closest_support['Tested'][0] = i
-        used_support << closest_support
-        stra_logger.info("Move tested support level to used: #{closest_support.to_s}")
+        @used_support << closest_support
+        stra_logger.info("Move tested @support level to used: #{closest_support.to_s}")
       end
     end
 
