@@ -22,6 +22,7 @@ class Strategies::Advanced
     @capital = 10000
     @slippage = 0.01
     @rr_coef = 1
+    @reuse_level = false
 
     @pair = pair
     @pair_length = pair_length
@@ -130,8 +131,10 @@ class Strategies::Advanced
           stra_logger.info("Stop loss sell position trigger: #{current_trade.inspect}")
           trade_logger.info("Stop loss sell position trigger: #{current_trade.inspect}")
           # Reuse level
-          level = @used_resistance.select { |i| i['Added'][0] == current_trade['level_added'] }
-          @resist.concat @used_resistance.delete(level[0])
+          if @reuse_level
+            level = @used_resistance.select { |i| i['Added'][0] == current_trade['level_added'] }
+            @resist.concat @used_resistance.delete(level[0])
+          end
           # Draw
           return
         end
@@ -146,8 +149,10 @@ class Strategies::Advanced
           stra_logger.info("Take profit sell position trigger: #{current_trade.inspect}")
           trade_logger.info("Take profit sell position trigger: #{current_trade.inspect}")
           # Reuse level
-          level = @used_resistance.select { |i| i['Added'][0] == current_trade['level_added'] }
-          @resist.concat @used_resistance.delete(level[0])
+          if @reuse_level
+            level = @used_resistance.select { |i| i['Added'][0] == current_trade['level_added'] }
+            @resist.concat @used_resistance.delete(level[0])
+          end
           # Draw
           return
         end
@@ -195,8 +200,10 @@ class Strategies::Advanced
           puts "SL #{i} -with result: #{current_trade['result'].round(1)}"
           stra_logger.info("Stop loss long position trigger: #{current_trade.inspect}")
           trade_logger.info("Stop loss long position trigger: #{current_trade.inspect}")
-          level = @used_support.select { |i| i['Added'][0] == current_trade['level_added'] }
-          @support.concat @used_support.delete(level[0])
+          if @reuse_level
+            level = @used_support.select { |i| i['Added'][0] == current_trade['level_added'] }
+            @support.concat @used_support.delete(level[0])
+          end
           # Draw
           return
         end
@@ -210,8 +217,11 @@ class Strategies::Advanced
           puts "TP #{i} -with result: #{current_trade['result'].round(1)}"
           stra_logger.info("Take profit long position trigger: #{current_trade.inspect}")
           trade_logger.info("Take profit long position trigger: #{current_trade.inspect}")
-          level = @used_support.select { |i| i['Added'][0] == current_trade['level_added'] }
-          @support.concat @used_support.delete(level[0])
+          # Reuse level
+          if @reuse_level
+            level = @used_support.select { |i| i['Added'][0] == current_trade['level_added'] }
+            @support.concat @used_support.delete(level[0])
+          end
           # Draw
           return
         end
