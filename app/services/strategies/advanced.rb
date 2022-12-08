@@ -84,7 +84,7 @@ class Strategies::Advanced
   end
 
   def check_signal_trade(i)
-    puts 'Check signal trade at ' + i.to_s
+    # puts 'Check signal trade at ' + i.to_s
     stra_logger.info("Check signal trade at #{i}")
 
     #*******************************************Short*******************************************
@@ -107,7 +107,7 @@ class Strategies::Advanced
       stra_logger.info("Open short trade: #{@open_trades.last.inspect}")
       trade_logger.info("Open short trade: #{@open_trades.last.inspect}")
       # Remove level
-      if df[:high][i] >= closest_resistance['Price'][0] && closest_resistance['Tested'][0] == 0
+      if df[:high][i] >= closest_resistance['Price'][0]
         @resist = @resist[@resist['Added'] != closest_resistance['Added'][0]]
         closest_resistance['Tested'][0] = i
         @used_resistance << closest_resistance
@@ -129,6 +129,9 @@ class Strategies::Advanced
           puts "SL #{i} -with result: #{current_trade['result'].round(1)}"
           stra_logger.info("Stop loss sell position trigger: #{current_trade.inspect}")
           trade_logger.info("Stop loss sell position trigger: #{current_trade.inspect}")
+          # Reuse level
+          level = @used_resistance.select { |i| i['Added'][0] == current_trade['level_added'] }
+          @resist.concat @used_resistance.delete(level[0])
           # Draw
           return
         end
@@ -142,6 +145,9 @@ class Strategies::Advanced
           puts "TP #{i} -with result: #{current_trade['result'].round(1)}"
           stra_logger.info("Take profit sell position trigger: #{current_trade.inspect}")
           trade_logger.info("Take profit sell position trigger: #{current_trade.inspect}")
+          # Reuse level
+          level = @used_resistance.select { |i| i['Added'][0] == current_trade['level_added'] }
+          @resist.concat @used_resistance.delete(level[0])
           # Draw
           return
         end
@@ -167,7 +173,7 @@ class Strategies::Advanced
       stra_logger.info("Open long trade: #{@open_trades.last.inspect}")
       trade_logger.info("Open long trade: #{@open_trades.last.inspect}")
       # Remove level
-      if df[:low][i] <= closest_support['Price'][0] && closest_support['Tested'][0] == 0
+      if df[:low][i] <= closest_support['Price'][0]
         @support = @support[@support['Added'] != closest_support['Added'][0]]
         closest_support['Tested'][0] = i
         @used_support << closest_support
@@ -189,6 +195,8 @@ class Strategies::Advanced
           puts "SL #{i} -with result: #{current_trade['result'].round(1)}"
           stra_logger.info("Stop loss long position trigger: #{current_trade.inspect}")
           trade_logger.info("Stop loss long position trigger: #{current_trade.inspect}")
+          level = @used_support.select { |i| i['Added'][0] == current_trade['level_added'] }
+          @support.concat @used_support.delete(level[0])
           # Draw
           return
         end
@@ -202,6 +210,8 @@ class Strategies::Advanced
           puts "TP #{i} -with result: #{current_trade['result'].round(1)}"
           stra_logger.info("Take profit long position trigger: #{current_trade.inspect}")
           trade_logger.info("Take profit long position trigger: #{current_trade.inspect}")
+          level = @used_support.select { |i| i['Added'][0] == current_trade['level_added'] }
+          @support.concat @used_support.delete(level[0])
           # Draw
           return
         end
